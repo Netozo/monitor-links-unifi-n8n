@@ -170,7 +170,7 @@
         "resource": "chat-api",
         "operation": "find-messages",
         "instanceName": "={{ $('Variaveis').first().json.instancia_evo }}",
-        "remoteJid": "={{ $('Variaveis').first().json.contato_bot }}",
+        "remoteJid": "={{ $('Variaveis').first().json.contato_alerta }}",
         "offset": 1
       },
       "type": "n8n-nodes-evolution-api.evolutionApi",
@@ -183,8 +183,8 @@
       "name": "Buscar_Ultima_Mensagem_Grupo",
       "credentials": {
         "evolutionApi": {
-          "id": "T4bLDFmvnKwD60xf",
-          "name": "Evolution account"
+          "id": "SUA_CREDENCIAL_EVOLUTION_API",
+          "name": "Evolution API"
         }
       }
     },
@@ -297,15 +297,15 @@
       "name": "Enviar_Alerta_WhatsApp",
       "credentials": {
         "evolutionApi": {
-          "id": "T4bLDFmvnKwD60xf",
-          "name": "Evolution account"
+          "id": "SUA_CREDENCIAL_EVOLUTION_API",
+          "name": "Evolution API"
         }
       }
     },
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "{\n  \"token_unifi\": \"<token unifi>\",\n  \"instancia_evo\": \"< instancia evolution>\",\n  \"contato_bot\": \"quem envia o alerta\",\n  \"contato_alerta\": \"quem recebe alerta\"\n}\n",
+        "jsonOutput": "{\n  \"token_unifi\": \"<token unifi>\",\n  \"instancia_evo\": \"<instancia evolution>\",\n  \"contato_alerta\": \"<JID/LID que recebe alerta>\"\n}\n",
         "options": {}
       },
       "type": "n8n-nodes-base.set",
@@ -478,10 +478,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1c41f045-17e8-4e35-9177-6c31f79d9e56",
+  "versionId": "",
   "meta": {
-    "instanceId": "0449728737991649ff1af12babd8a8512189e6c03f4dd7671805319936b6980a"
+    "instanceId": ""
   },
-  "id": "qvrdvibiVwyDFy0c",
+  "id": "",
   "tags": []
 }
