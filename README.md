@@ -87,13 +87,15 @@ No node **Variaveis** dentro do workflow, você precisa configurar os seguintes 
 
 Para obter o JID ou LID (identificadores) de um contato ou grupo no WhatsApp:
 
-1. Use o endpoint da Evolution API: `GET /chat/findContacts/{instanceName}`
-2. Ou utilize o formato padrão:
-   - **JID** - Contato individual: `{DDI}{DDD}{NUMERO}@s.whatsapp.net`
-   - **JID** - Grupo: `{ID_DO_GRUPO}@g.us`
-   - **LID** - Lista de transmissão: `{ID_DA_LISTA}@lid`
+**Através da Evolution API:**
+- **Grupos**: `GET /group/findGroupInfos/{instance}`
+- **Contatos**: `GET /chat/whatsappNumbers/{instance}`
 
-**Nota**: O workflow suporta tanto JID quanto LID para envio de alertas.
+**Ou utilize o formato padrão:**
+- **JID** - Contato individual: `{DDI}{DDD}{NUMERO}@s.whatsapp.net`
+- **JID** - Grupo: `{ID_DO_GRUPO}@g.us`
+
+**Nota**: O workflow suporta tanto JID quanto LID para envio de alertas. Para listas de transmissão, utilize o formato `{ID}@lid` (não há endpoint específico na Evolution API para buscar listas).
 
 ## Instalação
 
