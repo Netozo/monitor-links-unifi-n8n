@@ -71,17 +71,19 @@ No node **Variaveis** dentro do workflow, você precisa configurar os seguintes 
 
 #### Descrição das Variáveis:
 
-- **token_unifi**: Token de API da Unifi (obtenha em https://account.ui.com/settings)
+- **token_unifi**: Token de API da Unifi (obtenha em https://unifi.ui.com/api)
 - **instancia_evo**: Nome da instância configurada na Evolution API
 - **contato_alerta**: JID/LID do contato, grupo ou lista que receberá os alertas (formatos: `5511999999999@s.whatsapp.net`, `120363xxxxx@g.us` ou `{ID}@lid`)
 
 ## Como Obter o Token da Unifi
 
-1. Acesse https://account.ui.com/
+1. Acesse https://unifi.ui.com/api
 2. Faça login com sua conta Unifi
-3. Vá em **Settings** > **API Access**
-4. Gere um novo token de API
-5. Copie e cole no campo `token_unifi`
+3. Clique em **Create New**
+4. Escolha um nome para o token
+5. Defina o tempo de expiração (expiration)
+6. Clique em **Create**
+7. Copie o token gerado e cole no campo `token_unifi`
 
 ## Como Obter o JID/LID do WhatsApp
 
