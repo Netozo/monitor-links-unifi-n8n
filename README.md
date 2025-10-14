@@ -23,9 +23,32 @@ Workflow automatizado para n8n que monitora periodicamente o status e a saúde d
    - A mensagem é diferente da última enviada, OU
    - Passaram mais de 2 horas desde o último alerta
 
+## Pré-requisitos
+
+Antes de começar, certifique-se de ter:
+- **n8n** instalado e funcionando
+- **Evolution API** instalada e configurada
+- Uma **instância da Evolution API** criada e conectada ao WhatsApp
+
 ## Requisitos
 
-### 1. Instalar Node Evolution Community
+### 1. Configurar Eventos (Webhooks) na Evolution API
+
+Para garantir o funcionamento correto do workflow, é necessário configurar os eventos na sua instância da Evolution API:
+
+1. Acesse o painel da sua Evolution API
+2. Entre na instância que você criou
+3. Navegue até **Events** > **Webhook**
+4. Configure a **Webhook URL** (URL de produção do seu n8n, se aplicável)
+5. Ative os seguintes eventos:
+   - ✅ **CHATS_UPSERT**
+   - ✅ **GROUPS_UPSERT**
+   - ✅ **MESSAGES_UPSERT**
+6. Salve as configurações
+
+**Nota**: Estes eventos garantem que a Evolution API esteja sincronizada e possa buscar mensagens corretamente quando o workflow executar.
+
+### 2. Instalar Node Evolution Community
 
 Instale o pacote da Evolution API diretamente no n8n:
 
@@ -37,7 +60,7 @@ Instale o pacote da Evolution API diretamente no n8n:
 
 Documentação oficial: https://www.npmjs.com/package/n8n-nodes-evolution-api
 
-### 2. Configurar Credenciais da Evolution API
+### 3. Configurar Credenciais da Evolution API
 
 No n8n, configure as credenciais da Evolution API:
 
@@ -57,7 +80,7 @@ Para configurar:
 2. No campo "Credential to connect with", selecione a credencial da Evolution API que você criou
 3. Salve as alterações
 
-### 3. Configurar Variáveis do Workflow
+### 4. Configurar Variáveis do Workflow
 
 No node **Variaveis** dentro do workflow, você precisa configurar os seguintes parâmetros:
 
