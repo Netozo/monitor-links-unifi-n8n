@@ -65,7 +65,6 @@ No node **Variaveis** dentro do workflow, você precisa configurar os seguintes 
 {
   "token_unifi": "<seu-token-api-unifi>",
   "instancia_evo": "<nome-da-instancia-evolution>",
-  "contato_bot": "<numero-do-bot-que-envia@s.whatsapp.net>",
   "contato_alerta": "<numero-que-recebe-alerta@s.whatsapp.net>"
 }
 ```
@@ -74,7 +73,6 @@ No node **Variaveis** dentro do workflow, você precisa configurar os seguintes 
 
 - **token_unifi**: Token de API da Unifi (obtenha em https://account.ui.com/settings)
 - **instancia_evo**: Nome da instância configurada na Evolution API
-- **contato_bot**: JID/LID do bot que enviará as mensagens (formato: `5511999999999@s.whatsapp.net`)
 - **contato_alerta**: JID/LID do contato, grupo ou lista que receberá os alertas (formatos: `5511999999999@s.whatsapp.net`, `120363xxxxx@g.us` ou `{ID}@lid`)
 
 ## Como Obter o Token da Unifi
