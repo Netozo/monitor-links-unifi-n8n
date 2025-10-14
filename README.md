@@ -1,6 +1,6 @@
 # Monitor de Links Unifi - n8n Workflow
 
-Este workflow do n8n monitora automaticamente os links WAN dos gateways Unifi e envia alertas via WhatsApp quando detecta problemas de conectividade.
+Workflow automatizado para n8n que monitora em tempo real o status e a saúde dos links WAN dos gateways Unifi, enviando notificações instantâneas via WhatsApp (Evolution API) sempre que detectar problemas de conectividade, perda de pacotes ou gateways offline.
 
 ## Funcionalidades
 
