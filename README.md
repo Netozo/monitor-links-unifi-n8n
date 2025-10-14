@@ -34,18 +34,19 @@ Antes de começar, certifique-se de ter:
 
 ### 1. Configurar Eventos (Webhooks) na Evolution API
 
-Para garantir o funcionamento correto do workflow, é necessário ativar os eventos na sua instância da Evolution API:
+Para garantir o funcionamento correto do workflow, é necessário configurar os eventos na sua instância da Evolution API:
 
 1. Acesse o painel da sua Evolution API
 2. Entre na instância que você criou
 3. Navegue até **Events** > **Webhook**
-4. Ative os seguintes eventos:
+4. Configure uma **Webhook URL** (pode ser qualquer URL válida, ex: `https://seu-dominio.com/webhook`)
+5. Ative os seguintes eventos:
    - ✅ **CHATS_UPSERT**
    - ✅ **GROUPS_UPSERT**
    - ✅ **MESSAGES_UPSERT**
-5. Salve as configurações
+6. Salve as configurações
 
-**Nota**: Estes eventos garantem que a Evolution API esteja sincronizada e possa buscar mensagens corretamente quando o workflow executar.
+**Nota**: A URL é obrigatória para salvar as configurações, mas este workflow não utiliza webhooks. Os eventos garantem que a Evolution API esteja sincronizada e possa buscar mensagens corretamente quando o workflow executar.
 
 ### 2. Instalar Node Evolution Community
 
