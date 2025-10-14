@@ -27,11 +27,13 @@ Este workflow do n8n monitora automaticamente os links WAN dos gateways Unifi e 
 
 ### 1. Instalar Node Evolution Community
 
-Instale o pacote da Evolution API para n8n:
+Instale o pacote da Evolution API diretamente no n8n:
 
-```bash
-npm install n8n-nodes-evolution-api
-```
+1. Acesse **Settings** no menu do n8n
+2. Clique em **Community Nodes**
+3. Clique em **Install**
+4. No campo de input, digite: `n8n-nodes-evolution-api`
+5. Clique em **Install**
 
 Documentação oficial: https://www.npmjs.com/package/n8n-nodes-evolution-api
 
@@ -72,8 +74,8 @@ No node **Variaveis** dentro do workflow, você precisa configurar os seguintes 
 
 - **token_unifi**: Token de API da Unifi (obtenha em https://account.ui.com/settings)
 - **instancia_evo**: Nome da instância configurada na Evolution API
-- **contato_bot**: JID do bot que enviará as mensagens (formato: `5511999999999@s.whatsapp.net`)
-- **contato_alerta**: JID do contato ou grupo que receberá os alertas (formato: `5511999999999@s.whatsapp.net` ou `120363xxxxx@g.us` para grupos)
+- **contato_bot**: JID/LID do bot que enviará as mensagens (formato: `5511999999999@s.whatsapp.net`)
+- **contato_alerta**: JID/LID do contato, grupo ou lista que receberá os alertas (formatos: `5511999999999@s.whatsapp.net`, `120363xxxxx@g.us` ou `{ID}@lid`)
 
 ## Como Obter o Token da Unifi
 
@@ -83,14 +85,17 @@ No node **Variaveis** dentro do workflow, você precisa configurar os seguintes 
 4. Gere um novo token de API
 5. Copie e cole no campo `token_unifi`
 
-## Como Obter o JID do WhatsApp
+## Como Obter o JID/LID do WhatsApp
 
-Para obter o JID (identificador) de um contato ou grupo no WhatsApp:
+Para obter o JID ou LID (identificadores) de um contato ou grupo no WhatsApp:
 
 1. Use o endpoint da Evolution API: `GET /chat/findContacts/{instanceName}`
 2. Ou utilize o formato padrão:
-   - Contato individual: `{DDI}{DDD}{NUMERO}@s.whatsapp.net`
-   - Grupo: `{ID_DO_GRUPO}@g.us`
+   - **JID** - Contato individual: `{DDI}{DDD}{NUMERO}@s.whatsapp.net`
+   - **JID** - Grupo: `{ID_DO_GRUPO}@g.us`
+   - **LID** - Lista de transmissão: `{ID_DA_LISTA}@lid`
+
+**Nota**: O workflow suporta tanto JID quanto LID para envio de alertas.
 
 ## Instalação
 
@@ -150,7 +155,7 @@ wan2 (ISP): 65 (Perda de pacotes)
 
 ### Mensagens não estão sendo enviadas
 - Verifique se a instância da Evolution API está ativa
-- Confirme se os JIDs dos contatos estão no formato correto
+- Confirme se os JIDs/LIDs dos contatos estão no formato correto
 - Verifique os logs do workflow para identificar erros
 
 ### Workflow não está executando automaticamente
