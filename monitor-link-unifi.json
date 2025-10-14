@@ -1,0 +1,487 @@
+{
+  "name": "monitor-links-unifi",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Monitoramento de Links - Gateways Unifi\n\n**Fluxo:**\n1. Busca sites da Unifi\n2. Limpa dados de WANs\n3. Busca hostname de cada host\n4. Filtra problemas (state != connected OU wanUptime <= 80%)\n5. Verifica se já enviou alerta igual\n6. Envia no WhatsApp apenas se: tem problemas E (mensagem diferente OU passaram 2h)",
+        "height": 552,
+        "width": 2576,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1280,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "39ba4cf4-e7bc-4e31-ba2e-e370052f47ad",
+      "name": "Documentacao"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1216,
+        256
+      ],
+      "id": "c2dd17f8-5eee-4d75-bd1f-ffe118c9078a",
+      "name": "Disparador_a_Cada_30min"
+    },
+    {
+      "parameters": {
+        "url": "https://api.ui.com/v1/sites",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $json.token_unifi }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -784,
+        256
+      ],
+      "id": "9682bd13-284f-46b8-a759-f3faac4864a1",
+      "name": "Buscar_Sites_Unifi"
+    },
+    {
+      "parameters": {
+        "jsCode": "function cleanWans(wans) {\n  const cleanedWans = {};\n  for (const key in wans) {\n    if (Object.prototype.hasOwnProperty.call(wans, key)) {\n      const { ispInfo, externalIp, wanUptime } = wans[key];\n      cleanedWans[key] = {\n        name: ispInfo?.name,\n        externalIp,\n        wanUptime\n      };\n    }\n  }\n  return cleanedWans;\n}\n\nconst { data } = items[0].json;\n\nif (!data || !Array.isArray(data)) {\n  throw new Error('Entrada inválida: data.data ausente ou não é uma lista.');\n}\n\nreturn data.map(site => {\n  const wans = site.statistics?.wans || {};\n\n  // Usa a função cleanWans para limpar e reestruturar as interfaces\n  const cleanedWans = cleanWans(wans);\n\n  return {\n    json: {\n      hostId: site.hostId,\n      wans: cleanedWans\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        208
+      ],
+      "id": "8b4d6191-404f-4272-9673-f60e154b04ae",
+      "name": "Limpar_Dados_WAN",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "=https://api.ui.com/v1/hosts/{{$json[\"hostId\"]}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-Key",
+              "value": "={{ $('Variaveis').item.json.token_unifi }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -384,
+        256
+      ],
+      "id": "f33e6bbd-da42-4055-b513-9b017eb319ca",
+      "name": "Buscar_Hostname_do_Host"
+    },
+    {
+      "parameters": {
+        "jsCode": "const originalData = $items(\"Limpar_Dados_WAN\", 0, 0);\nconst hostnameData = $input.all();\n\nreturn hostnameData.map((hostItem, index) => {\n  const hostname = hostItem.json.data?.reportedState?.hostname || 'Nome não encontrado';\n  const state = hostItem.json.data?.reportedState?.state || 'Status não encontrado';\n  \n  if (!originalData[index]) {\n    return {\n      json: {\n        hostId: 'ID não encontrado',\n        hostname,\n        state,\n        wans: {}\n      }\n    };\n  }\n  \n  const siteData = originalData[index];\n  const hostId = siteData.json?.hostId || 'ID não encontrado';\n  const wans = siteData.json?.wans || {};\n  \n  return {\n    json: {\n      hostId,\n      hostname,\n      state,\n      wans\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -192,
+        208
+      ],
+      "id": "c5d7c515-fd3b-420b-b3ae-002c29741455",
+      "name": "Combinar_Hostname_e_WANs"
+    },
+    {
+      "parameters": {
+        "jsCode": "let allFilteredData = [];\nlet allTexts = [];\n\nitems.forEach(item => {\n  const hostname = item.json.hostname;\n  const state = item.json.state;\n  const wans = item.json.wans || {};\n  \n  // Se state diferente de connected, só mostra hostname e state\n  if (state !== 'connected') {\n    allFilteredData.push({\n      name: hostname,\n      state: state\n    });\n    \n    allTexts.push(`Gateway: ${hostname}\\n⚠️ Status: ${state}`);\n  } else {\n    // Se connected, filtra apenas por wanUptime <= 80\n    for (const [key, value] of Object.entries(wans)) {\n      if (value.wanUptime <= 80) {\n        let uptimeText = value.wanUptime;\n        \n        if (uptimeText >= 0 && uptimeText <= 9) {\n          uptimeText = \"Down\";\n        } else if (uptimeText >= 10 && uptimeText <= 80) {\n          uptimeText = `${uptimeText} (Perda de pacotes)`;\n        }\n        \n        allFilteredData.push({\n          name: hostname,\n          state: state,\n          wan: key,\n          isp: value.name,\n          wanUptime: value.wanUptime\n        });\n        \n        allTexts.push(`Gateway: ${hostname}\\n${key} (${value.name}): ${uptimeText}`);\n      }\n    }\n  }\n});\n\nif (allFilteredData.length === 0) {\n  return [{ json: { data: [] } }];\n}\n\nconst formattedText = `‼ Monitoramento de Links GW Unifi ‼\\n\\n${allTexts.join(\"\\n\\n\")}\\n\\n`;\n\nreturn {\n  json: {\n    data: allFilteredData,\n    text: formattedText\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        256
+      ],
+      "id": "0ae89b3d-6532-444c-b538-c8fc077eb94c",
+      "name": "Filtrar_Problemas_e_Formatar_Alerta"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4ca5470c-0fe3-4e16-8914-7a4018b92969",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        176,
+        160
+      ],
+      "id": "dc899a5f-018e-4435-8261-7085ce923629",
+      "name": "Tem_Problemas?"
+    },
+    {
+      "parameters": {
+        "resource": "chat-api",
+        "operation": "find-messages",
+        "instanceName": "={{ $('Variaveis').first().json.instancia_evo }}",
+        "remoteJid": "={{ $('Variaveis').first().json.contato_bot }}",
+        "offset": 1
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -48
+      ],
+      "id": "688f84b5-a4a1-432a-ae1d-88a3c54e92d1",
+      "name": "Buscar_Ultima_Mensagem_Grupo",
+      "credentials": {
+        "evolutionApi": {
+          "id": "T4bLDFmvnKwD60xf",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ac7318ee-d19a-4e29-bceb-6b112d94b4e1",
+              "leftValue": "={{ $('Tem_Problemas?').item.json.text }}",
+              "rightValue": "={{ $json.data.messages.records[0].message.conversation }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        576,
+        -48
+      ],
+      "id": "0d8ac036-8a0c-43ce-b7e2-6dd221b1ed34",
+      "name": "Mensagem_Ja_Foi_Enviada?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verifica se passaram mais de 2 horas desde a última mensagem\nconst lastMessageData = $input.item.json;\nconst messageTimestamp = lastMessageData.data.messages.records[0].messageTimestamp;\n\n// Converte timestamp Unix para Date\nconst messageDate = new Date(messageTimestamp * 1000);\nconst now = new Date();\n\n// Calcula diferença em horas\nconst diffHours = (now - messageDate) / (1000 * 60 * 60);\n\nreturn {\n  json: {\n    deveEnviar: diffHours >= 2,\n    horasDesdeUltimaMensagem: Math.round(diffHours * 10) / 10\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        160
+      ],
+      "id": "5e6e0aa1-c5a2-4958-9607-ab2643bca78f",
+      "name": "Verificar_Tempo_Desde_Ultima_Msg"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "265a25c2-9e55-43c5-a7a3-dde5962ce973",
+              "leftValue": "={{ $json.deveEnviar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        160
+      ],
+      "id": "ad1039e4-5cc3-42de-8959-28f5b7909e97",
+      "name": "Passaram_2_Horas?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        336
+      ],
+      "id": "f75791f0-a4bf-418a-8e4c-7ad4f38be6c4",
+      "name": "Nao_Enviar"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "={{ $('Variaveis').first().json.instancia_evo }}",
+        "remoteJid": "={{ $('Variaveis').first().json.contato_alerta }}",
+        "messageText": "={{ $('Tem_Problemas?').item.json.text }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        -32
+      ],
+      "id": "3fb6441a-da07-47e4-9af4-4107eeeb0827",
+      "name": "Enviar_Alerta_WhatsApp",
+      "credentials": {
+        "evolutionApi": {
+          "id": "T4bLDFmvnKwD60xf",
+          "name": "Evolution account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"token_unifi\": \"<token unifi>\",\n  \"instancia_evo\": \"< instancia evolution>\",\n  \"contato_bot\": \"quem envia o alerta\",\n  \"contato_alerta\": \"quem recebe alerta\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -992,
+        208
+      ],
+      "id": "c47cff91-141d-4a53-8eaf-7c1c99530c4f",
+      "name": "Variaveis"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Disparador_a_Cada_30min": {
+      "main": [
+        [
+          {
+            "node": "Variaveis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar_Sites_Unifi": {
+      "main": [
+        [
+          {
+            "node": "Limpar_Dados_WAN",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar_Dados_WAN": {
+      "main": [
+        [
+          {
+            "node": "Buscar_Hostname_do_Host",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar_Hostname_do_Host": {
+      "main": [
+        [
+          {
+            "node": "Combinar_Hostname_e_WANs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combinar_Hostname_e_WANs": {
+      "main": [
+        [
+          {
+            "node": "Filtrar_Problemas_e_Formatar_Alerta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar_Problemas_e_Formatar_Alerta": {
+      "main": [
+        [
+          {
+            "node": "Tem_Problemas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem_Problemas?": {
+      "main": [
+        [
+          {
+            "node": "Buscar_Ultima_Mensagem_Grupo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nao_Enviar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar_Ultima_Mensagem_Grupo": {
+      "main": [
+        [
+          {
+            "node": "Mensagem_Ja_Foi_Enviada?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem_Ja_Foi_Enviada?": {
+      "main": [
+        [
+          {
+            "node": "Verificar_Tempo_Desde_Ultima_Msg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar_Alerta_WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verificar_Tempo_Desde_Ultima_Msg": {
+      "main": [
+        [
+          {
+            "node": "Passaram_2_Horas?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Passaram_2_Horas?": {
+      "main": [
+        [
+          {
+            "node": "Enviar_Alerta_WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nao_Enviar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Variaveis": {
+      "main": [
+        [
+          {
+            "node": "Buscar_Sites_Unifi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1c41f045-17e8-4e35-9177-6c31f79d9e56",
+  "meta": {
+    "instanceId": "0449728737991649ff1af12babd8a8512189e6c03f4dd7671805319936b6980a"
+  },
+  "id": "qvrdvibiVwyDFy0c",
+  "tags": []
+}
