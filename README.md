@@ -27,8 +27,9 @@ Workflow automatizado para n8n que monitora periodicamente o status e a saúde d
 
 Antes de começar, certifique-se de ter:
 - **n8n** instalado e funcionando
-- **Evolution API** instalada e configurada (**Evite usar chips importantes para os envio, o whatsapp pode banir em caso de envios abusivos**)
+- **Evolution API** instalada e configurada
 - Uma **instância da Evolution API** criada e conectada ao WhatsApp
+**IMPORTANTE: Evite usar chips importantes para os envio, o whatsapp pode banir em caso de envios abusivos**
 
 ## Requisitos
 
